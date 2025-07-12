@@ -498,7 +498,7 @@ export const STATIC_STORE_DATA: Store[] = [
         conditions: "수능 직후 이벤트 기간에 수험표 지참 시 할인 적용. 매년 정책이 달라질 수 있으니 방문 전 확인 필수.",
       },
     ],
-    imageUrl: "public/images/Nike.jpg",
+    imageUrl: "images/Nike.jpg",
     rating: 4.7,
     operatingHours: "10:30 - 22:00",
   },

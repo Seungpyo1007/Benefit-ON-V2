@@ -283,8 +283,10 @@ const App: React.FC = () => {
     const modalType = modalState.type;
     setModalState({ isOpen: false, type: null });
     
-    if(activeView !== 'explore' && (modalType === 'aiRecommender' || modalType === 'favorites' || modalType === 'imageReceiptAnalysis')) {
-        setActiveView('explore');
+    // When a modal opened from the menu bar is closed, reset the view to 'explore'.
+    // This will move the menu bar indicator back to the 'Explore' tab.
+    if (['aiRecommender', 'favorites', 'imageReceiptAnalysis'].includes(modalType || '')) {
+      setActiveView('explore');
     }
 
     if (modalType === 'imageReceiptAnalysis') {
@@ -816,13 +818,11 @@ const App: React.FC = () => {
         </Modal>
       )}
 
-      {!modalState.isOpen && (
-        <MenuBar 
-          activeView={activeView}
-          onNavigate={handleMenuNavigate}
-          favoriteCount={favorites.length}
-        />
-      )}
+      <MenuBar 
+        activeView={activeView}
+        onNavigate={handleMenuNavigate}
+        favoriteCount={favorites.length}
+      />
     </div>
   );
 };

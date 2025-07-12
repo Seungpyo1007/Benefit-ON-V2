@@ -3,7 +3,14 @@ import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { Store, ReceiptData, Category, DiscountInfo, ReceiptAnalysisResult } from '../types';
 import { GEMINI_MODEL_NAME } from '../constants';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Vite exposes environment variables on `import.meta.env`
+const API_KEY = import.meta.env.VITE_API_KEY;
+
+if (!API_KEY) {
+  console.error("VITE_API_KEY is not set. Please set the environment variable in your .env file or hosting provider.");
+  // You might want to throw an error or handle this more gracefully
+}
+const ai = new GoogleGenAI({ apiKey: API_KEY! });
 
 const parseJsonFromText = <T,>(text: string): T | null => {
   let jsonStr = text.trim();

@@ -40,7 +40,7 @@ export interface ReceiptData {
 
 export interface ModalState {
   isOpen: boolean;
-  type: 'storeDetails' | 'aiRecommender' | 'receiptHistory' | 'favorites' | 'imageReceiptAnalysis' | null;
+  type: 'storeDetails' | 'aiRecommender' | 'receiptHistory' | 'favorites' | 'imageReceiptAnalysis' | 'recentlyViewed' | null;
   data?: Store | ReceiptData[] | Store[]; // Store for details, ReceiptData[] for history, Store[] for favorites
 }
 

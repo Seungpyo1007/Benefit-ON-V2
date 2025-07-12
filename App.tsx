@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Store, Category, ReceiptData, ModalState, DiscountInfo, NotificationMessage, ReceiptAnalysisResult } from './types';
 import { getAiRecommendations, analyzeReceiptImage } from './services/geminiService';
@@ -16,8 +17,8 @@ import CenteredNotification from './components/CenteredNotification';
 
 const ActionButton = ({ icon, text, onClick, colorClass, isLoading = false }) => (
     <button onClick={onClick} className="flex flex-col items-center justify-center space-y-2 text-center group" disabled={isLoading}>
-        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl flex items-center justify-center transform transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg ${colorClass} ${isLoading ? 'cursor-not-allowed bg-white/5' : ''}`}>
-            {isLoading ? <LoadingSpinner size="sm" /> : <i className={`${icon} text-2xl sm:text-3xl text-white`}></i>}
+        <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transform transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg ${colorClass} ${isLoading ? 'cursor-not-allowed bg-white/5' : ''}`}>
+            {isLoading ? <LoadingSpinner size="sm" /> : <i className={`${icon} text-xl sm:text-2xl text-white`}></i>}
         </div>
         <span className="text-xs sm:text-sm font-medium text-white/90">{text}</span>
     </button>
@@ -37,6 +38,7 @@ const App: React.FC = () => {
   const [aiRecommendations, setAiRecommendations] = useState<Store[]>([]);
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
   const [userPreferencesInput, setUserPreferencesInput] = useState<string>('');
+  const [aiRecommendationHasBeenRequested, setAiRecommendationHasBeenRequested] = useState<boolean>(false);
 
   const [receiptHistory, setReceiptHistory] = useState<ReceiptData[]>([]);
 
@@ -47,6 +49,7 @@ const App: React.FC = () => {
 
 
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<string[]>([]);
 
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [notification, setNotification] = useState<NotificationMessage | null>(null);
@@ -118,6 +121,10 @@ const App: React.FC = () => {
     if (storedReceipts) {
       setReceiptHistory(JSON.parse(storedReceipts));
     }
+    const storedRecentlyViewed = localStorage.getItem('혜택ON_recentlyViewed');
+    if (storedRecentlyViewed) {
+      setRecentlyViewed(JSON.parse(storedRecentlyViewed));
+    }
   }, []);
 
   useEffect(() => {
@@ -127,6 +134,11 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('혜택ON_receiptHistory', JSON.stringify(receiptHistory));
   }, [receiptHistory]);
+
+  useEffect(() => {
+    localStorage.setItem('혜택ON_recentlyViewed', JSON.stringify(recentlyViewed));
+  }, [recentlyViewed]);
+
 
   const DEMO_LOCATIONS = {
     gangnam: { latitude: 37.4979, longitude: 127.0276, name: '강남구(강남역)' },
@@ -172,6 +184,11 @@ const App: React.FC = () => {
     setCurrentStore(store);
     setModalState({ isOpen: true, type: 'storeDetails', data: store });
     setActiveView('explore'); // 상세 정보는 explore의 일부로 간주
+    
+    setRecentlyViewed(prev => {
+        const updatedList = [store.id, ...prev.filter(id => id !== store.id)];
+        return updatedList.slice(0, 5); // 최대 5개까지 저장
+    });
   };
 
   const handleAiRecommend = async (preferences: string) => {
@@ -179,6 +196,7 @@ const App: React.FC = () => {
         showNotification("추천을 받으려면 원하는 내용을 입력해주세요.", "info");
         return;
     }
+    setAiRecommendationHasBeenRequested(true);
     setIsAiLoading(true);
     setAiRecommendations([]);
     try {
@@ -362,6 +380,7 @@ const App: React.FC = () => {
       case 'ai':
         setAiRecommendations([]); 
         setUserPreferencesInput(''); 
+        setAiRecommendationHasBeenRequested(false);
         setModalState({ isOpen: true, type: 'aiRecommender' });
         break;
       case 'receiptAi':
@@ -371,17 +390,25 @@ const App: React.FC = () => {
         setModalState({ isOpen: true, type: 'imageReceiptAnalysis' });
         break;
       case 'favorites':
-        setModalState({ isOpen: true, type: 'favorites', data: stores.filter(s => favorites.includes(s.id)) });
+        setModalState({ isOpen: true, type: 'favorites' });
         break;
       default:
         break;
     }
   };
 
+  const handleShowRecentlyViewed = () => {
+    const viewedStores = recentlyViewed
+      .map(id => stores.find(s => s.id === id))
+      .filter((s): s is Store => s !== undefined);
+    setModalState({ isOpen: true, type: 'recentlyViewed', data: viewedStores });
+  };
+
     const handleShareStore = async (store: Store) => {
     if (!store) return;
 
-    const shareText = `[혜택:ON 추천]
+    const appUrl = 'https://benefit-on-v2.vercel.app/';
+    const shareMessage = `[혜택:ON 추천]
 ✨ ${store.name}
 
 🎉 대표 혜택: ${store.discounts[0]?.description || '특별 할인'}
@@ -393,7 +420,8 @@ const App: React.FC = () => {
       try {
         await navigator.share({
           title: `[혜택:ON] ${store.name} 할인 정보`,
-          text: shareText,
+          text: shareMessage,
+          url: appUrl,
         });
         // 성공 알림은 선택 사항. 네이티브 UI가 이미 피드백을 줌.
       } catch (error) {
@@ -402,9 +430,10 @@ const App: React.FC = () => {
       }
     } else {
       // Fallback: 클립보드에 복사
+      const clipboardText = `${shareMessage}\n\n${appUrl}`;
       try {
-        await navigator.clipboard.writeText(shareText);
-        showNotification("혜택 정보가 복사되었습니다. 친구에게 붙여넣으세요!", 'success');
+        await navigator.clipboard.writeText(clipboardText);
+        showNotification("혜택 정보와 링크가 복사되었습니다. 친구에게 붙여넣으세요!", 'success');
       } catch (err) {
         console.error('클립보드 복사 실패:', err);
         showNotification("정보 복사에 실패했습니다.", 'error');
@@ -680,7 +709,7 @@ const App: React.FC = () => {
             </div>
          );
       case 'favorites':
-        const favStores = (modalState.data as Store[]) || stores.filter(s => favorites.includes(s.id));
+        const favStores = stores.filter(s => favorites.includes(s.id));
         return (
             <div className="space-y-3">
             {favStores.length === 0 ? <p className="text-white/80">찜한 가게가 없습니다.</p> :
@@ -690,11 +719,28 @@ const App: React.FC = () => {
                     <p className="font-semibold text-indigo-300">{store.name} <span className="text-xs text-white/60">({getCategoryInfo(store.category).label})</span></p>
                     <p className="text-sm text-white/80 truncate">{store.discounts[0]?.description}</p>
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); toggleFavorite(store.id); }} className="text-red-400 hover:text-red-300 text-lg p-1" aria-label="찜 해제">
+                  <button onClick={(e) => { e.stopPropagation(); setFavorites(prev => prev.filter(id => id !== store.id)); showNotification("찜 목록에서 삭제되었습니다.", "info"); }} className="text-red-400 hover:text-red-300 text-lg p-1" aria-label="찜 해제">
                     <i className="fas fa-trash-alt"></i>
                   </button>
                 </div>
               ))
+            }
+            </div>
+        );
+      case 'recentlyViewed':
+        const recentStores = modalState.data as Store[];
+        return (
+            <div className="space-y-3">
+            {recentStores.length === 0 ? <p className="text-white/80">최근에 본 혜택이 없습니다.</p> :
+                recentStores.map(store => (
+                    <div key={store.id} className="p-3 bg-white/5 rounded-lg flex justify-between items-center cursor-pointer hover:bg-white/10" onClick={() => { closeModal(); handleSelectStore(store); }}>
+                        <div>
+                            <p className="font-semibold text-indigo-300">{store.name} <span className="text-xs text-white/60">({getCategoryInfo(store.category).label})</span></p>
+                            <p className="text-sm text-white/80 truncate">{store.discounts[0]?.description}</p>
+                        </div>
+                        <i className="fas fa-chevron-right text-white/50"></i>
+                    </div>
+                ))
             }
             </div>
         );
@@ -709,9 +755,16 @@ const App: React.FC = () => {
       case 'imageReceiptAnalysis': return "영수증 AI 분석 & 추천";
       case 'receiptHistory': return "나의 혜택 내역";
       case 'favorites': return "찜한 가게 목록";
+      case 'recentlyViewed': return "최근 본 혜택";
       default: return "";
     }
-  }
+  };
+
+  const isMenuBarVisible = !modalState.isOpen || 
+    (modalState.type === 'favorites') ||
+    (modalState.type === 'aiRecommender' && !aiRecommendationHasBeenRequested) ||
+    (modalState.type === 'imageReceiptAnalysis' && !isReceiptImageAnalyzing);
+
 
   return (
     <div className="min-h-screen text-white pb-32 sm:pb-24">
@@ -733,13 +786,14 @@ const App: React.FC = () => {
               <p className="text-white/80">다양한 조건으로 할인 혜택을 찾아보세요!</p>
           </div>
           
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="flex items-center justify-around flex-wrap gap-y-4 px-4">
               <ActionButton icon="fas fa-location-arrow" text="내 주변 혜택" onClick={handleToggleNearbyMode} colorClass={isNearbyModeActive ? 'bg-blue-500/80' : 'bg-white/10'} isLoading={isLocationLoading} />
               <ActionButton icon="fas fa-magic" text="AI 추천" onClick={() => handleMenuNavigate('ai')} colorClass="bg-white/10" />
               <ActionButton icon="fas fa-receipt" text="영수증 분석" onClick={() => handleMenuNavigate('receiptAi')} colorClass="bg-white/10" />
+              <ActionButton icon="fas fa-history" text="최근 본 내역" onClick={handleShowRecentlyViewed} colorClass="bg-white/10" />
           </div>
 
-          <div>
+          <div className="mt-6">
             <input 
               type="text"
               placeholder="가게 이름, 주소, 테마 검색..."
@@ -818,11 +872,13 @@ const App: React.FC = () => {
         </Modal>
       )}
 
-      <MenuBar 
-        activeView={activeView}
-        onNavigate={handleMenuNavigate}
-        favoriteCount={favorites.length}
-      />
+      {isMenuBarVisible && (
+        <MenuBar 
+          activeView={activeView}
+          onNavigate={handleMenuNavigate}
+          favoriteCount={favorites.length}
+        />
+      )}
     </div>
   );
 };

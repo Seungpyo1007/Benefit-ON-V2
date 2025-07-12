@@ -2,7 +2,7 @@ import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { Store, ReceiptData, Category, DiscountInfo, ReceiptAnalysisResult } from '../types';
 import { GEMINI_MODEL_NAME } from '../constants';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const parseJsonFromText = <T,>(text: string): T | null => {
   let jsonStr = text.trim();

@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { Store, ReceiptData, Category, DiscountInfo, ReceiptAnalysisResult } from '../types';
 import { GEMINI_MODEL_NAME } from '../constants';

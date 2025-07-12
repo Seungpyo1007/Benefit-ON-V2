@@ -20,7 +20,7 @@ export const STATIC_STORE_DATA: Store[] = [
           "만 13세 ~ 만 18세 청소년 대상. 신분증 또는 학생증 제시가 필요할 수 있습니다. 자세한 요금은 CGV 앱/웹사이트에서 확인하세요.",
       },
     ],
-    imageUrl: "/images/logo-cgv.png",
+    imageUrl: "../images/logo-cgv.png",
     rating: 4.8,
     operatingHours: "상영 시간에 따라 상이",
   },

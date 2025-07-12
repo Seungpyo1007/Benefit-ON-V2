@@ -1,16 +1,8 @@
-
-
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { Store, ReceiptData, Category, DiscountInfo, ReceiptAnalysisResult } from '../types';
 import { GEMINI_MODEL_NAME } from '../constants';
-import { CATEGORIES_WITH_INFO } from '../categoryUtils';
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  console.error("API_KEY is not set. Please set the environment variable.");
-}
-const ai = new GoogleGenAI({ apiKey: API_KEY! });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
 
 const parseJsonFromText = <T,>(text: string): T | null => {
   let jsonStr = text.trim();
@@ -61,7 +53,16 @@ export const getAiRecommendations = async (userPreferences: string, availableSto
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: GEMINI_MODEL_NAME,
       contents: prompt,
-      config: { responseMimeType: "application/json" }
+      config: { 
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.STRING
+          },
+          description: "An array of recommended store IDs."
+        }
+      }
     });
     
     const recommendedStoreIds = parseJsonFromText<string[]>(response.text);

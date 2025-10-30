@@ -106,7 +106,9 @@ SDHS-HACKATHON-2025-Team10/
 
 ## 🤝 기여하기
 
-이 프로젝트는 SDHS 해커톤 2025 Team10 "LBM" 의 결과물입니다. 
+이 프로젝트는 SDHS 해커톤 2025 Team10 "LBM" 의 결과물입니다.
+
+[팀 프로젝트 레포](https://github.com/project-sdhs/SDHS-HACKATHON-2025-Team10)
 
 ## 📄 라이선스
 

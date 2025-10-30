@@ -68,7 +68,7 @@
 ## 🔧 프로젝트 구조
 
 ```
-SDHS-HACKATHON-2025-Team10/
+Benefit-ON-V2/
 ├── components/          # React 컴포넌트
 │   ├── Header.tsx      # 헤더 컴포넌트
 │   ├── StoreCard.tsx   # 매장 카드 컴포넌트
